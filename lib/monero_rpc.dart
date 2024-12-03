@@ -1,8 +1,5 @@
-/// Support for doing something awesome.
-///
-/// More dartdocs go here.
-library;
+/// Monero RPC wrapper in Dart.
+library monero_rpc;
 
-export 'src/monero_rpc_base.dart';
-
-// TODO: Export any libraries intended for clients of this package.
+// export 'src/wallet_rpc.dart'; // TODO.
+export 'src/daemon_rpc.dart';
