@@ -8,9 +8,20 @@ void main() async {
   );
 
   try {
-    final result = await daemonRpc.call('get_info', {});
+    // Call get_info via /json_rpc.
+    final infoResult = await daemonRpc.call('get_info', {});
     print('get_info response:');
-    print(result);
+    print(infoResult);
+
+    // Call get_transactions via direct endpoint.
+    final txsResult = await daemonRpc.postToEndpoint('/get_transactions', {
+      'txs_hashes': [
+        'd6e48158472848e6687173a91ae6eebfa3e1d778e65252ee99d7515d63090408'
+      ],
+      'decode_as_json': true,
+    });
+    print('get_transactions response:');
+    print(txsResult);
   } catch (e) {
     print('Error: $e');
   }
