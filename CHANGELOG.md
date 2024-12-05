@@ -1,3 +1,9 @@
+## 1.2.0
+
+- Add helper functions for /get_outs: getOut and getOuts with response model.
+- Add utility function for converting relative key offsets (as would be parsed 
+  from a transaction) to absolute key offsets (as would be used in /get_outs).
+
 ## 1.1.0
 
 - Support direct endpoints (eg. /get_transactions vs. /json_rpc).
