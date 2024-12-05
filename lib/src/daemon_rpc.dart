@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:digest_auth/digest_auth.dart';
 import 'package:http/http.dart' as http;
 
+import 'models/get_outs_response.dart';
+
 class DaemonRpc {
   final String rpcUrl;
   final String username;
@@ -126,5 +128,17 @@ class DaemonRpc {
     final Map<String, dynamic> result = jsonDecode(authenticatedResponse.body);
 
     return result;
+  }
+
+  Future<GetOutsResponse> getOut(int index) async {
+    final response = await postToEndpoint('/get_outs', {
+      'get_txid': true,
+      'outputs': [
+        {'index': index},
+      ],
+    });
+
+    // Now deserialize into our model
+    return GetOutsResponse.fromJson(response);
   }
 }
