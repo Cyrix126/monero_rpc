@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:monero_rpc/src/daemon_rpc.dart';
+import 'package:monero_rpc/src/utils.dart';
 
 void main() async {
   final daemonRpc = DaemonRpc(
@@ -25,24 +28,37 @@ void main() async {
     print(txsResult);
     print("\n\n\n");
 
-    // // Call get_outs via direct endpoint.
-    // final outsResponse = await daemonRpc.postToEndpoint(
-    //   '/get_outs',
-    //   {
-    //     'get_txid': true,
-    //     'outputs': [
-    //       {'index': 5164903},
-    //     ],
-    //   },
-    // );
-    // print('get_outs response:');
-    // print(jsonEncode(outsResponse));
+    // Call get_outs via direct endpoint.
+    final outsResponse = await daemonRpc.postToEndpoint(
+      '/get_outs',
+      {
+        'get_txid': true,
+        'outputs': [
+          {'index': 5164903},
+        ],
+      },
+    );
+    print('get_outs response:');
+    print(jsonEncode(outsResponse));
 
-    // Call get_out via helper method.
+    // Call get_outs via helper method.
     try {
-      final getOutsResult = await daemonRpc.getOut(5164903);
+      final getOutResult = await daemonRpc.getOut(5164903);
+      print('Height: ${getOutResult.outs.first.height}');
+      print('TxID: ${getOutResult.outs.first.txid}');
+    } catch (e) {
+      print('Error: $e');
+    }
+
+    // Call get_outs via helper method with list of relative key offsets (as
+    // deserialized from a transaction).
+    try {
+      final getOutsResult =
+          await daemonRpc.getOuts(convertRelativeToAbsolute([5164903, 123]));
       print('Height: ${getOutsResult.outs.first.height}');
       print('TxID: ${getOutsResult.outs.first.txid}');
+      print('Height: ${getOutsResult.outs.last.height}');
+      print('TxID: ${getOutsResult.outs.last.txid}');
     } catch (e) {
       print('Error: $e');
     }

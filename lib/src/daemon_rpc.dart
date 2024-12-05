@@ -141,4 +141,22 @@ class DaemonRpc {
     // Now deserialize into our model
     return GetOutsResponse.fromJson(response);
   }
+
+  /// Get a list of outputs by their absolute key offsets.
+  ///
+  /// The key offsets parameter is a list of integers representing the absolute
+  /// key offsets of the outputs to retrieve.  Critically, the key_offsets as
+  /// would be deserialized from a transaction are relative.  Use the
+  /// convertRelativeToAbsolute helper function to convert the relative offsets
+  /// from a parsed tx to the absolute ones needed by /get_outs..
+  Future<GetOutsResponse> getOuts(List<int> keyOffsets) async {
+    final outputs = keyOffsets.map((offset) => {'index': offset}).toList();
+
+    final response = await postToEndpoint('/get_outs', {
+      'get_txid': true,
+      'outputs': outputs,
+    });
+
+    return GetOutsResponse.fromJson(response);
+  }
 }
