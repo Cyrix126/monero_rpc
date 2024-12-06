@@ -13,7 +13,11 @@ class DaemonRpc {
   final String? password;
   late final String baseUrl;
 
-  DaemonRpc(this.rpcUrl, {this.username, this.password}) {
+  DaemonRpc(this.rpcUrl, {String? username, String? password})
+      : username =
+            (username != null && username.trim().isNotEmpty) ? username : null,
+        password =
+            (password != null && password.trim().isNotEmpty) ? password : null {
     // Extract base URL from the rpcUrl.
     final Uri rpcUri = Uri.parse(rpcUrl);
     baseUrl = '${rpcUri.scheme}://${rpcUri.authority}';
@@ -118,42 +122,31 @@ class DaemonRpc {
     final http.Client client = http.Client();
     final fullUrl = '$baseUrl$endpoint';
 
-    // If no credentials, just attempt one request
-    if (username == null || password == null) {
-      final response = await client.post(
-        Uri.parse(fullUrl),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode(params),
-      );
+    // Initial request
+    final response = await client.post(
+      Uri.parse(fullUrl),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(params),
+    );
 
-      if (response.statusCode != 200) {
-        throw Exception('Call to $endpoint failed: ${response.body}');
-      }
+    // If 200 response, return decoded body
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    }
 
-      return jsonDecode(response.body) as Map<String, dynamic>;
+    // Only proceed with auth if credentials provided and got 401
+    if ((username == null || password == null) || response.statusCode != 401) {
+      throw Exception('Call to $endpoint failed: ${response.body}');
+    }
+
+    if (!response.headers.containsKey('www-authenticate')) {
+      throw Exception(
+          'Authentication required but no WWW-Authenticate header received');
     }
 
     // With credentials, proceed with digest authentication.
     final DigestAuth digestAuth = DigestAuth(username!, password!);
-
-    // Initial request to get the `WWW-Authenticate` header.
-    final initialResponse = await client.post(
-      Uri.parse(fullUrl),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode(params),
-    );
-
-    if (initialResponse.statusCode != 401 ||
-        !initialResponse.headers.containsKey('www-authenticate')) {
-      throw Exception('Unexpected response: ${initialResponse.body}');
-    }
-
-    // Extract Digest details from `WWW-Authenticate` header.
-    final String authInfo = initialResponse.headers['www-authenticate']!;
+    final String authInfo = response.headers['www-authenticate']!;
     digestAuth.initFromAuthorizationHeader(authInfo);
 
     // Create Authorization header for the second request.
