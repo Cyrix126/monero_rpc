@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+// Only import digest_auth if credentials are needed.
+// This is optional; you can leave the import and just skip using it if username/password are null.
 import 'package:digest_auth/digest_auth.dart';
 import 'package:http/http.dart' as http;
 
@@ -7,24 +9,52 @@ import 'models/get_outs_response.dart';
 
 class DaemonRpc {
   final String rpcUrl;
-  final String username;
-  final String password;
+  final String? username;
+  final String? password;
   late final String baseUrl;
 
-  DaemonRpc(this.rpcUrl, {required this.username, required this.password}) {
+  DaemonRpc(this.rpcUrl, {this.username, this.password}) {
     // Extract base URL from the rpcUrl.
     final Uri rpcUri = Uri.parse(rpcUrl);
     baseUrl = '${rpcUri.scheme}://${rpcUri.authority}';
   }
 
-  /// Perform a JSON-RPC call with Digest Authentication.
+  /// Perform a JSON-RPC call.  If username and password are provided, use
+  /// digest authentication.  Otherwise, just do a single request without auth.
   Future<Map<String, dynamic>> call(
       String method, Map<String, dynamic> params) async {
     final http.Client client = http.Client();
-    final DigestAuth digestAuth = DigestAuth(username, password);
-
-    // Use rpcUrl directly.
     final String rpcUrl = this.rpcUrl;
+
+    // If credentials not provided, just try one request without auth.
+    if (username == null || password == null) {
+      final response = await client.post(
+        Uri.parse(rpcUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'jsonrpc': '2.0',
+          'id': '0',
+          'method': method,
+          'params': params,
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('RPC call failed: ${response.body}');
+      }
+
+      final Map<String, dynamic> result = jsonDecode(response.body);
+      if (result['error'] != null) {
+        throw Exception('RPC Error: ${result['error']}');
+      }
+
+      return result['result'];
+    }
+
+    // Digest authentication flow if credentials are available.
+    final DigestAuth digestAuth = DigestAuth(username!, password!);
 
     // Initial request to get the `WWW-Authenticate` header.
     final initialResponse = await client.post(
@@ -80,13 +110,33 @@ class DaemonRpc {
     return result['result'];
   }
 
-  /// Perform a direct HTTP POST request with Digest Authentication.
+  /// Perform a direct HTTP POST request to an endpoint.
+  ///
+  /// If credentials are provided, use digest authentication.
   Future<Map<String, dynamic>> postToEndpoint(
       String endpoint, Map<String, dynamic> params) async {
     final http.Client client = http.Client();
-    final DigestAuth digestAuth = DigestAuth(username, password);
-
     final fullUrl = '$baseUrl$endpoint';
+
+    // If no credentials, just attempt one request
+    if (username == null || password == null) {
+      final response = await client.post(
+        Uri.parse(fullUrl),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(params),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Call to $endpoint failed: ${response.body}');
+      }
+
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    }
+
+    // With credentials, proceed with digest authentication.
+    final DigestAuth digestAuth = DigestAuth(username!, password!);
 
     // Initial request to get the `WWW-Authenticate` header.
     final initialResponse = await client.post(
@@ -125,9 +175,7 @@ class DaemonRpc {
           'Call to $endpoint failed: ${authenticatedResponse.body}');
     }
 
-    final Map<String, dynamic> result = jsonDecode(authenticatedResponse.body);
-
-    return result;
+    return jsonDecode(authenticatedResponse.body) as Map<String, dynamic>;
   }
 
   Future<GetOutsResponse> getOut(int index) async {
@@ -138,7 +186,7 @@ class DaemonRpc {
       ],
     });
 
-    // Now deserialize into our model
+    // Now deserialize into our model.
     return GetOutsResponse.fromJson(response);
   }
 
