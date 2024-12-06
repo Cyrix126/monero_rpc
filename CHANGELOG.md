@@ -1,3 +1,7 @@
+## 1.3.0
+
+- Make RPC digest authentication optional and update demo to use public node.
+
 ## 1.2.0
 
 - Add helper functions for /get_outs: getOut and getOuts with response model.
