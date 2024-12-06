@@ -1,3 +1,7 @@
+## 1.3.1
+
+- Fix get_outs with an unauthenticated node.
+
 ## 1.3.0
 
 - Make RPC digest authentication optional and update demo to use public node.
