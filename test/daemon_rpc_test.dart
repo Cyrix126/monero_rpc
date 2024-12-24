@@ -14,7 +14,8 @@ void main() {
   });
   test('Raw request without authentication', () {
     expect(
-        rawRequestRpc(Uri.parse('http://localhost:18081'), 'get_info', {}),
+        DaemonRpc.rawRequestRpc(
+            Uri.parse('http://localhost:18081'), 'get_info', {}),
         'POST /json_rpc HTTP/1.1\r\n'
         'Host: localhost\r\n'
         'Content-Type: application/json\r\n'
@@ -26,8 +27,8 @@ void main() {
     final authorizationHeaderValue =
         'Digest username="user", realm="monero-rpc", nonce="test", uri="http://localhost:18081", qop=auth, nc=00000001, cnonce="test", response="test"';
     expect(
-        rawRequestRpc(Uri.parse('http://localhost:18081'), 'get_info', {},
-            authorizationHeaderValue),
+        DaemonRpc.rawRequestRpc(Uri.parse('http://localhost:18081'), 'get_info',
+            {}, authorizationHeaderValue),
         'POST /json_rpc HTTP/1.1\r\n'
         'Host: localhost\r\n'
         'Authorization: $authorizationHeaderValue\r\n'
