@@ -1,17 +1,19 @@
 import 'dart:convert';
 
+import 'package:http/http.dart';
 import 'package:monero_rpc/src/daemon_rpc.dart';
 import 'package:monero_rpc/src/utils.dart';
 
 void main() async {
   // Authenticated example:
-  // final daemonRpc = DaemonRpc(
+  // final daemonRpc = DaemonRpc(Client(),
   //   'http://localhost:18081/json_rpc', // Replace with your Monero daemon URL.
   //   username: 'user', // Replace with your username.
   //   password: 'password', // Replace with your password.
   // );
-
-  final daemonRpc = DaemonRpc('http://monero.stackwallet.com:18081/json_rpc');
+  final client = Client();
+  final daemonRpc =
+      DaemonRpc(client, 'http://monero.stackwallet.com:18081/json_rpc');
 
   try {
     // Call get_info via /json_rpc.

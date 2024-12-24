@@ -11,9 +11,10 @@ class DaemonRpc {
   final String rpcUrl;
   final String? username;
   final String? password;
+  final http.Client client;
   late final String baseUrl;
 
-  DaemonRpc(this.rpcUrl, {String? username, String? password})
+  DaemonRpc(this.client, this.rpcUrl, {String? username, String? password})
       : username =
             (username != null && username.trim().isNotEmpty) ? username : null,
         password =
@@ -27,7 +28,6 @@ class DaemonRpc {
   /// digest authentication.  Otherwise, just do a single request without auth.
   Future<Map<String, dynamic>> call(
       String method, Map<String, dynamic> params) async {
-    final http.Client client = http.Client();
     final String rpcUrl = this.rpcUrl;
 
     // If credentials not provided, just try one request without auth.
@@ -119,7 +119,6 @@ class DaemonRpc {
   /// If credentials are provided, use digest authentication.
   Future<Map<String, dynamic>> postToEndpoint(
       String endpoint, Map<String, dynamic> params) async {
-    final http.Client client = http.Client();
     final fullUrl = '$baseUrl$endpoint';
 
     // Initial request
