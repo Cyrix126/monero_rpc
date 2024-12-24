@@ -200,3 +200,22 @@ class DaemonRpc {
     return GetOutsResponse.fromJson(response);
   }
 }
+
+/// Raw request ready for a JSON-RPC call with authentication if the Authorization value is provided
+///
+/// The raw request without authentication can be used to retrieve the Authenticate response header
+/// needed to generate the Authorization value.
+String rawRequestRpc(Uri rpcUri, String method, Map<String, dynamic> params,
+    [String? authHeaderValue]) {
+  final body = jsonEncode(
+      {"jsonrpc": "2.0", "id": "0", "method": method, "params": params});
+  final authHeader =
+      (authHeaderValue != null) ? 'Authorization: $authHeaderValue\r\n' : '';
+  return 'POST /json_rpc HTTP/1.1\r\n'
+      'Host: ${rpcUri.host}\r\n'
+      '$authHeader'
+      'Content-Type: application/json\r\n'
+      'Content-Length: ${body.length}\r\n'
+      '\r\n'
+      '$body';
+}
